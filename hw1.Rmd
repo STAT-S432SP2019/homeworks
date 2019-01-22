@@ -1,11 +1,11 @@
 ---
 title: "STAT-S 432: Homework 1"
-date: "Due January 17, 2019"
+date: "Due January 24, 2019"
 output:
-  html_document:
-    theme: flatly
   pdf_document:
     toc: no
+  html_document:
+    theme: flatly
 ---
 
 ## 1. Functions.
