@@ -1,0 +1,79 @@
+---
+title: "STAT-S 432: Homework 2"
+date: "Due February 15, 2019"
+output:
+  pdf_document:
+    toc: no
+  html_document:
+    theme: flatly
+---
+
+>  __Instructions:__ You must submit this homework by pushing a file named "hw2.Rmd" file to your team's repo. Note that that is the __only__ file you will be allowed to push. Commit early and often.
+#### Research Scenario: Predicting house prices 
+
+"Gross domestic product" is a standard measure of the size of an economy; it's
+the total value of all goods and services bought and solid in a country over the course
+of a year. It's not a perfect measure of prosperity, but it is a very common one, and
+many important questions in economics turn on what leads GDP to grow faster or
+slower.
+
+
+One common idea is that poorer economies, those with lower initial GDPs,
+should grower faster than richer ones. The reasoning behind this "catching up" is
+that poor economies can copy technologies and procedures from richer ones, but
+already-developed countries can only grow as technology advances. A second, separate idea is that countries can boost their growth rate by under-valuing their currency,
+making the goods and services they export cheaper.
+This week's data set contains the following variables:
+
+  * Country, in a three-letter code (see http://en.wikipedia.org/wiki/ISO_
+3166-1_alpha-3).
+  * Year (in five-year increments).
+  * Per-capita GDP, in dollars per person per year ("real" or inflation-adjusted).
+  * Average percentage growth rate in GDP over the next five years.
+  * An index of currency under-valuation2
+      - The index is 0 if the currency is neither over- nor under- valued, 
+      positive if under-valued, negative if it is over-valued.Note that not all 
+      countries have data for all years. However, there are no missing
+      values in the data table.
+
+  1. Perform and Exploratory Data Analysis on the data. Write sentences describing the data. 
+You should address (or do) all the things listed:
+    - What is the data and where does it come from?
+    - How many observations do we have? Are there any missing?
+    - What and which kind of predictors are available?
+    - Produce a pairwise scatterplot of all the continuous variables. Comment on what 
+    types of relationships you see.
+    - How does this plot inform whether a linear regression model is reasonable or not?
+    - Are there any obvious outliers? Why do you say that? Should we remove them?
+
+  2.  Linearly regress the growth rate on the under-valuation index and the log
+of GDP. 
+    - Report the coefficients and their standard errors. 
+    - Do the coefficients support the idea of "catching up"? Do they support the idea 
+    that under-valuing a currency boosts economic growth?
+    - Check the residuals and report your findings.
+
+  3. Repeat the linear regression but add as predictors the country, and the year.
+Use `factor(year)`, not year, in the regression formula.
+    - Report the coefficients for log GDP and undervaluation, and their standard errors
+    in a table. Interpret the coefficients.
+    - Explain why it is more appropriate to use `factor(year)` in the formula instead
+    of just year.
+    - Plot the coefficients of `factor(year)` over the years.
+    - Check the residuals and report your findings. How do the residuals differ from
+    before
+    - Does this model support the idea that low GDP countries 'catch up'? Of undervaluation
+    boosting growth?
+  
+  4. Does adding in year and country as covariates improve the predictability of
+a linear model which includes log GDP and under-valuation?
+
+    - What are $R^2$ and adjusted $R^2$ of the two models? Does this tell us anything
+    about which model is better? Explain.
+    - Use leave-one-out cross-validation to find the mean squared errors of the two models.
+    Which one actually predicts better?
+    - Explain why 5-fold cross validation may be inappropirate here. You do not need to actually
+    do it.
+  
+
+
