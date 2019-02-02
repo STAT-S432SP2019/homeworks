@@ -9,7 +9,9 @@ output:
 ---
 
 >  __Instructions:__ You must submit this homework by pushing a file named "hw2.Rmd" file to your team's repo. Note that that is the __only__ file you will be allowed to push. Commit early and often.
-#### Research Scenario: Predicting house prices 
+
+
+__Data named uval.csv__
 
 "Gross domestic product" is a standard measure of the size of an economy; it's
 the total value of all goods and services bought and solid in a country over the course
