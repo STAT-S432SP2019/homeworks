@@ -37,10 +37,10 @@ This week's data set contains the following variables:
       values in the data table.
 
  1. Problem 1 will use the same dataset as before. Now you are going to use kernel regression. You will
- be comparing the linear regression to the model you created in Homework 2. Use kernel regression, as implemented 
+ be comparing the 2nd linear regression to the model you created in Homework 2 to a kernel regression that uses the same predictors. Use kernel regression, as implemented 
  in the np package, to non-parametrically regress growth on log GDP, under-valuation, country, and year 
  (treating year as a categorical variable). Set `tol` to about $10^{-3}$ and `ftol` to about  $10^{-4}$ in the npreg
-command, and allow several minutes for it to run. (You’ll probably want tocache this part of your code.)
+command, and allow several minutes for it to run. (You’ll probably want to cache this part of your code.)
 
     * Give the coefficients of the kernel regression, or explain why you can’t.
     
