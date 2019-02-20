@@ -1,0 +1,275 @@
+---
+title: "STAT-S 432: Homework 2"
+date: "Due February 15, 2019"
+output:
+  pdf_document:
+    toc: no
+  html_document:
+    theme: flatly
+---
+```{r, include=FALSE}
+# General set-up for the report:
+# Don't print out code
+# Save results so that code blocks aren't re-run unless code
+# changes (cache), _or_ a relevant earlier code block changed (autodep),
+# don't clutter R output with messages or warnings (message, warning)
+library(MASS)
+library(knitr)
+library(ggplot2)
+library(tidyverse)
+library(car) # For diagnostics of lm
+opts_chunk$set(echo=FALSE,
+               cache=TRUE, autodep=TRUE,
+               message=FALSE, warning=FALSE)
+# Turn off meaningless clutter in summary() output
+options(show.signif.stars=FALSE)
+```
+
+__Instructions:__ You must submit this homework by pushing a file named "hw2.Rmd" file 
+to your team's repo. Note that that is the __only__ file you will be allowed to push. 
+Commit early and often.
+
+
+__Data named uval.csv__
+
+"Gross domestic product" is a standard measure of the size of an economy; it's
+the total value of all goods and services bought and solid in a country over the course
+of a year. It's not a perfect measure of prosperity, but it is a very common one, and
+many important questions in economics turn on what leads GDP to grow faster or
+slower.
+
+
+One common idea is that poorer economies, those with lower initial GDPs,
+should grow faster than richer ones. The reasoning behind this "catching up" is
+that poor economies can copy technologies and procedures from richer ones, but
+already-developed countries can only grow as technology advances. A second, separate idea is that countries can boost their growth rate by under-valuing their currency,
+making the goods and services they export cheaper.
+This week's data set contains the following variables:
+
+  * Country, in a three-letter code (see http://en.wikipedia.org/wiki/ISO_
+3166-1_alpha-3).
+  * Year (in five-year increments).
+  * Per-capita GDP, in dollars per person per year ("real" or inflation-adjusted).
+  * Average percentage growth rate in GDP over the next five years.
+  * An index of currency under-valuation
+      - The index is 0 if the currency is neither over- nor under- valued, 
+      positive if under-valued, negative if it is over-valued.Note that not all 
+      countries have data for all years. However, there are no missing
+      values in the data table.
+
+  1. Perform and Exploratory Data Analysis on the data. Write sentences describing the data. 
+You should address (or do) all the things listed:
+    - What is the data and where does it come from?
+    - How many observations do we have? Are there any missing?
+    - What and which kind of predictors are available?
+    - Produce a pairwise scatterplot of all the continuous variables. Comment on what 
+    types of relationships you see.
+    - How does this plot inform whether a linear regression model is reasonable or not?
+    - Are there any obvious outliers? Why do you say that? Should we remove them?
+    
+    ```{r load.data}
+    library(readr)
+    uval <- read_csv("data/uval.csv")
+    ```
+    
+The dataset presented provides a look into the economies of various countries through economic indicators over `r length(levels(factor(uval$year)))` five year periods from 1955 to 2000. There are a total of `r length(levels(factor(uval$country)))` countries for which we are provided the GDP, and a currency valuation index across the time periods, though not all countries have observations for each time period. The objective is to use the provided data to predict the growth rate of the countries across the time periods using the GDP and currency valuation. 
+
+The main objective is to see if growth rate is affected by GDP and currency valuation; specifically, we want to see if economies with low GDPs tend to have higher economic growth. As the data stands, there are no missing values beyond certain countries not having observations for all time periods. In total, there are 1301 observations.
+    ```{r pairs.plot}
+    #pairwise scatterplot
+    pairs(growth ~ log(gdp) + underval, data = uval)
+    ```
+    
+    
+A pairwise scatterplot is given above. Note that the log of GDP is used instead of the raw GDP values as GDP is a highly right-skewed variable. Very often, the log of financial data must used due to the inherently skewed nature. From the plots it is difficult to see a direct relation with either the log of GDP or the undervaluation index. If there is a relationship, it appears that there is a slight positive relatinoship between growth and both `log(gdp)` and the undervaluation index, though this pattern may change when breaking down the data by year.
+
+There is a very strange relationship between undervaluation and `log(gdp)`. High and low values of the `log(gdp)` are associated with overvalued (negative `underval)` currencies.  
+
+There appear to be three outliers in terms of growth which are presented in the following table. The two highest growths from Equatorial Guinea (GNQ) in 2000, and United Arab Emirates (ARE) in 1975. It should be noted that the UAE was founded in 1971 and this may be the reason for its high growth in 1975. A cursory examination of Equatorial Guinea's history shows no extraordinary events around that time period. The lowest growth was found to be from Liberia (LBR) in 1990. This year in Liberia may merit removal from the dataset as this was the time of the First Liberian Civil War, which took place from 1989 to 1996. For now, all observations will remain in the dataset.  
+
+```{r}
+#Get outliers. Ordered the data, then pulled first and last two.
+kable(uval[order(uval$growth)[c(1,1300,1301)],])
+```
+
+     
+  2.  Linearly regress the growth rate on the under-valuation index and the log
+of GDP. 
+    - Report the coefficients and their standard errors. 
+    - Do the coefficients support the idea of "catching up"? Do they support the idea 
+    that under-valuing a currency boosts economic growth?
+    - Check the residuals and report your findings.
+```{r mod1}
+# Make requested lm
+mod1 <- lm(growth ~ log(gdp) + underval, data = uval)
+```
+
+
+The first model to be fit to the data used `log(gdp)` and the undervaluation index to predict the growth rate. The coefficients and their standard errors are presented in the following table. 
+
+The coefficient for the `log(gdp)` is 0.006 which means that higher GDP is associated with higher growth. Therefore we do not have support of the idea that lower GDP countries "catch up", i.e., have higher growth on average.
+
+The coefficient for the undervaluation index is 0.005. This indicates that higher values of this index are associated with higher growth rates. Higher values of this index indicate a more undervalued currency. Therefore, we have support of the idea that, in general, countries with undervalued currencies will have higher rates of growth on average.
+```{r coeff1}
+# make a nice table of the coefficients and std errors, but not h-testing stuff
+kable(coefficients(summary(mod1))[,c(1,2)],digits=3)
+```
+    
+```{r qqplot1}
+# Get the qqplot. Several plots available if you plot an lm. which = # pulls out
+# the plot you want.
+plot(mod1, which = 2)
+```
+    
+To assess the residuals, a Q-Q plot was produced. A strong deviation from normality is evident due to the heavy tails.  
+
+The following residual plots show, in descending order, the residuals versus the fitted values, the residuals versus the predictor `log(gdp)`, and the residuals versus the undervaluation index. Included in each plot is also a random resampling of the reisiduals. If the distribution of the residuals is homoskedastic and unbiased, then both sets of points should have the same distribution. It is difficult to tell, but there is not strong evidence of assumption violations. The residuals in all three plots are centered about 0 with no trends, and the variability is consistent. The resampled residuals seem to match the distribution of the original residuals.
+    
+```{r resplots.and.resample, fig.height = 8}
+
+  # resample residuals
+  uval1.test <- data.frame(uval, resids = residuals(mod1),fit = predict(mod1))
+  uval1.test$resample <- sample(residuals(mod1), replace = T)
+  
+  # make df long format
+  uval1.test <- gather(uval1.test, key = 'type', value = 'resids', c(resids, resample))
+  
+  # lets make some graphs!
+    p1 <- ggplot(uval1.test, aes(fit, resids, color = type, shape = type)) +
+      geom_point() + geom_hline(yintercept = 0) +
+      scale_shape_manual(values=c(1, 15)) +
+      labs(title = "Residual & Resampled Residual Plots")
+    
+    p2 <- ggplot(uval1.test, aes(log(gdp), resids, color = type, shape = type)) +
+      geom_point() + geom_hline(yintercept = 0) +
+      scale_shape_manual(values=c(1, 15))
+    
+    p3 <- ggplot(uval1.test, aes(underval, resids, color = type, shape = type)) +
+      geom_point() + geom_hline(yintercept = 0) +
+      scale_shape_manual(values=c(1, 15))
+    
+    gridExtra::grid.arrange(p1, p2, p3, nrow = 3)
+```
+
+(It could be argued that there is an indication of heteroskedacity. Particularly in the Undervaluation plot. It just seems so subtle... Maybe my eyes are going bad.)
+
+
+  3. Repeat the linear regression but add as predictors the country, and the year.
+Use `factor(year)`, not year, in the regression formula.
+    - Report the coefficients for log GDP and undervaluation, and their standard errors
+    in a table. Interpret the coefficients.
+    - Explain why it is more appropriate to use `factor(year)` in the formula instead
+    of just year.
+    - Plot the coefficients of `factor(year)` over the years.
+    - Check the residuals and report your findings. How do the residuals differ from
+    before
+    - Does this model support the idea that low GDP countries 'catch up'? Of undervaluation
+    boosting growth?
+    
+```{r mod2}
+mod2 <- lm(growth ~ log(gdp) + underval + factor(country) + factor(year), data = uval)
+```
+
+The following table displays our coefficients for the `log(gdp)` and undervaluation index  for the new model that includes the year and country. Interpreting the `log(gdp)` coefficient is a bit tricky. With logs, we should consider a percentage increase in the predictor. The increase in growth rate for a 10\% increase in GDP is `r round(coef(mod2)[2]*log(1.1),5)` or `r round(coef(mod2)[2]*log(1.1),5)*100`\%; this is assuming that undervaluation is held constant and we are looking at a single country within a single time period. The undervaluation index indicates a `r round(coef(mod2)[3], 3)` increase in the growth rate should all other factors (GDP, country, year) be held constant.
+```{r coeff.mod2}
+kable(coefficients(summary(mod2))[1:3,c(1,2)],digits=3)
+```
+As far as the question of low GDP countries "catching up", we must again answer negatively to that. The `log(gdp)` coefficent was positive indicating that smaller GDPs are associated with less growth, and higher GDPs are associated with higher growth. I suppose this supports the idea that the more money you have, the more your money can grow. (It takes money to make money.)
+
+For the model calculations, we are calculating the model such that each year is a different group. This allows the effect of the year to vary from year to year. If we treated year as a continuous variable, we be assuming that the effect of time constant despite the year. To my knowledge, economies unversally grow and decline over time, so it would be folly to assume that effect is constant. Most likely the effect of year would be averaged out. 
+
+Actually... lets check that! The following table is the coefficients for a model that is the same is model 2, but year is treated as a continuous variable. In the table, we see the coefficient for year is -0.0007, a fairly minor effect, even if it were significant.
+
+```{r year.check}
+mod.check <- lm(growth ~ log(gdp) + underval + year + factor(country), data = uval)
+kable(coefficients(summary(mod.check))[1:4,c(1,2)],digits=4)
+```
+
+In comparison to that mode, look to the following graph which depicts the effect that each 5 year time period is estimated to have on the growth rate, assuming all other variables (GDP, undervaluation, country) are held constant. From 1955 to 1970, there is a fairly minor effect (near 0), but in 1975, that is now 0.01 decrease (-0.01) on the growth rate. This effect is at the highest magnitude of -0.03 in 1990. This coincides with a early 1990s recession that affected a large part of the Western world.  
+
+
+```{r plot.year.coeffs}
+year.coeffs <- as.vector(c(0,tail(coefficients(summary(mod2))[,1], 9)))
+years <- seq(1955,2000,5)
+
+qplot(years, year.coeffs, xlab = "Year", ylab = "Effect on Growth", main = "")
+```
+
+The following plots are used to check assumptions on residuals. 
+
+```{r qqplot2}
+# Get the qqplot. Several plots available if you plot an lm. which = # pulls out
+# the plot you want.
+par(mar = c(3,4,3,2))
+plot(mod2, which = 2)
+```
+
+First, the Q-Q plot above, and then the reisdual plots below: residuals vs fitted, and residuals vs predictors. From the Q-Q plot, we have the same issue, heavy tails indicating non-normality. In the proceeding residual plots original residuals and resampled residuals are given for each residual plot. The results are the same as before, no issues are visible in the plots; the variance appears constant and the residuals are centered at 0.
+\newpage
+```{r resplots.and.resample2, fig.height = 8}
+
+  # resample residuals
+  uval2.test <- data.frame(uval, resids = residuals(mod1),fit = predict(mod1))
+  uval2.test$resample <- sample(residuals(mod1), replace = T)
+  
+  # make df long format
+  uval2.test <- gather(uval2.test, key = 'type', value = 'resids', c(resids, resample))
+  
+  # lets make some graphs!
+    p1 <- ggplot(uval2.test, aes(fit, resids, color = type, shape = type)) +
+      geom_point() + geom_hline(yintercept = 0) +
+      scale_shape_manual(values=c(1, 15)) +
+      labs(title = "Residual & Resampled Residual Plots")
+    
+    p2 <- ggplot(uval2.test, aes(log(gdp), resids, color = type, shape = type)) +
+      geom_point() + geom_hline(yintercept = 0) +
+      scale_shape_manual(values=c(1, 15))
+    
+    p3 <- ggplot(uval2.test, aes(underval, resids, color = type, shape = type)) +
+      geom_point() + geom_hline(yintercept = 0) +
+      scale_shape_manual(values=c(1, 15))
+    
+    gridExtra::grid.arrange(p1, p2, p3, nrow = 3)
+```
+  \newpage
+  4. Does adding in year and country as covariates improve the predictability of
+a linear model which includes log GDP and under-valuation?
+
+  - What are $R^2$ and adjusted $R^2$ of the two models? Does this tell us anything  about which model is better? Explain.
+  - Use leave-one-out cross-validation to find the mean squared errors of the two models.
+    Which one actually predicts better?
+  - Explain why 5-fold cross validation may be inappropirate here. You do not 
+    need to actually do it.
+    
+```{r include = F}
+summary(mod1)$r.squared; summary(mod1)$adj.r.squared
+summary(mod2)$r.squared; summary(mod2)$adj.r.squared
+```
+Model 1 (the one without year and country) has an $R^2$ and Adjusted $R^2$ of `r round(summary(mod1)$r.squared,3)` and `r round(summary(mod1)$adj.r.squared,3)` respectively. Compared to the values for Model 2 (year and country included as factors), `r round(summary(mod2)$r.squared,3)` and `r round(summary(mod2)$adj.r.squared,3)` respectively. This, at first glance, tells indicates that Model 2 is much better than Model 1 by a fair margin, but to be sure, we will check using LOO-CV.
+
+```{r looCV}
+cv.lm <- function(mdl) mean(residuals(mdl)^2 / (1-hatvalues(mdl))^2)
+
+cv1 <- cv.lm(mod1)
+cv2 <- cv.lm(mod2)
+
+```
+
+Cross validation gives an estimated risk of `r round(cv1,5)` for model 1, and estimated risk of 0.00095 for model 2. This indicates that model 2 is slightly better than model 1. The increase in $R^2$ from model 1 to model 2 was quite large, but the benefit of model 2 when considering the estimated risk is much smaller.
+
+As for the question about 5-fold cross validation, the main issue has to do with the countries. Some countries have less than 5 observations (minimum 2). This means that unless the folds were carefully chosen, sometimes a model would be estimated without a particular country in the training data, then when it comes to the validation data, we would not be able to get a prediction since there was no coefficient for that country. 
+
+## Rubric
+
+Probelm 1 (6/6): Each question or bullet point has been addressed. Questions are answered accurately. Any plot produced is explained and variable relationships are described. Outliers are addressed.
+
+ > For problems 2 & 3, residuals do not need to be resampled. Just discussed.
+ 
+Problem 2 (7/7): Coefficients and their standard errors are reported. Coefficients are correctly interpreted. Residuals are analyzed through plots: Q-Q Plot, Residuals vs Fitted, and Residuals vs Predictors. The assumptions of normality, bias, and homoskedasticity are discussed and any issues (or lack thereof) with these assumptions are explained.
+
+Problem 3 (7/7): Requested oefficients and their standard errors are reported. Coefficients are correctly interpreted. Question regarding `factor(year)` is correctly answered and plot of `year` coefficients is given. Residuals are analyzed through plots: Q-Q Plot, Residuals vs Fitted, and Residuals vs continuous predictors. The assumptions of normality, bias, and homoskedasticity are discussed and any issues (or lack thereof) with these assumptions are explained.
+
+Problem 4 (5/5): Question regarding $R^2$ is answered and a reasonable explanation is given.
+Cross validation is correctly applied the correct model is chosen. Explanation for 5-fold CV is given.
+
+
